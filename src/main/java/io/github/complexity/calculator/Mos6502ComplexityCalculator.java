@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
  * - Bit branches (BBR0-BBR7, BBS0-BBS7 for 65C02)
  * - Each subroutine starts at complexity 1
  */
-public class Mos6502ComplexityCalculator implements ComplexityCalculator {
+public class Mos6502ComplexityCalculator extends AssemblerComplexityCalculatorBase {
 
     // Patterns for different assembler constructs
     private static final Pattern PROC_PATTERN = Pattern.compile(
@@ -38,23 +38,9 @@ public class Mos6502ComplexityCalculator implements ComplexityCalculator {
     /**
      * Helper class to manage subroutine parsing state.
      */
-    private static class SubroutineState {
-        String currentSubroutine;
-        int currentComplexity;
+    private static class SubroutineState extends FunctionState {
         String labelCandidate; // Potential subroutine label waiting for RTS
         int candidateComplexity;
-
-        void startSubroutine(String name) {
-            this.currentSubroutine = name;
-            this.currentComplexity = 1;
-            this.labelCandidate = null;
-            this.candidateComplexity = 0;
-        }
-
-        void endSubroutine() {
-            this.currentSubroutine = null;
-            this.currentComplexity = 0;
-        }
 
         void setLabelCandidate(String name) {
             this.labelCandidate = name;
@@ -63,7 +49,7 @@ public class Mos6502ComplexityCalculator implements ComplexityCalculator {
 
         void promoteLabelCandidate() {
             if (labelCandidate != null) {
-                this.currentSubroutine = labelCandidate;
+                this.currentFunction = labelCandidate;
                 this.currentComplexity = candidateComplexity;
                 this.labelCandidate = null;
                 this.candidateComplexity = 0;
@@ -75,16 +61,13 @@ public class Mos6502ComplexityCalculator implements ComplexityCalculator {
             this.candidateComplexity = 0;
         }
 
-        void addComplexity(int points) {
-            if (currentSubroutine != null) {
+        @Override
+        public void addComplexity(int points) {
+            if (currentFunction != null) {
                 this.currentComplexity += points;
             } else if (labelCandidate != null) {
                 this.candidateComplexity += points;
             }
-        }
-
-        boolean hasSubroutine() {
-            return currentSubroutine != null;
         }
 
         boolean hasCandidate() {
@@ -107,8 +90,7 @@ public class Mos6502ComplexityCalculator implements ComplexityCalculator {
     ));
 
     @Override
-    public ComplexityResult calculate(String sourceCode, String fileName) throws IOException {
-        Map<String, Integer> complexities = new HashMap<>();
+    protected void parseSourceCode(String sourceCode, Map<String, Integer> complexities) throws IOException {
         SubroutineState state = new SubroutineState();
 
         BufferedReader reader = new BufferedReader(new StringReader(sourceCode));
@@ -124,37 +106,30 @@ public class Mos6502ComplexityCalculator implements ComplexityCalculator {
             if (processProcEnd(trimmed, state, complexities)) continue;
 
             // Check for DASM SUBROUTINE directive
-            if (processSubroutineDirective(trimmed, state, complexities)) continue;
+            if (processSubroutineDirective(trimmed, state)) continue;
 
             // Check for RTS (return from subroutine)
             if (processRts(trimmed, state, complexities)) continue;
 
             // Check for label (potential subroutine start)
-            if (processLabel(trimmed, state, complexities)) continue;
+            if (processLabel(trimmed, state)) continue;
 
             // Count decision points if we're in a subroutine or have a candidate
-            if (state.hasSubroutine() || state.hasCandidate()) {
+            if (state.hasFunction() || state.hasCandidate()) {
                 state.addComplexity(countDecisionPoints(trimmed));
             }
         }
 
         // Save last subroutine if exists
         saveSubroutine(state, complexities);
-
-        // If no subroutines found, treat whole file as one function
-        if (complexities.isEmpty()) {
-            complexities.put("_global_", calculateGlobalComplexity(sourceCode));
-        }
-
-        return new ComplexityResult(fileName, "6502 Assembler", complexities);
     }
 
     /**
      * Saves current subroutine state to the complexities map if a subroutine exists.
      */
     private void saveSubroutine(SubroutineState state, Map<String, Integer> complexities) {
-        if (state.hasSubroutine()) {
-            complexities.put(state.currentSubroutine, state.currentComplexity);
+        if (state.hasFunction()) {
+            complexities.put(state.getCurrentFunction(), state.getCurrentComplexity());
         }
     }
 
@@ -166,7 +141,7 @@ public class Mos6502ComplexityCalculator implements ComplexityCalculator {
         if (matcher.find()) {
             saveSubroutine(state, complexities);
             state.clearLabelCandidate();
-            state.startSubroutine(matcher.group(1));
+            state.startFunction(matcher.group(1));
             return true;
         }
         return false;
@@ -179,7 +154,7 @@ public class Mos6502ComplexityCalculator implements ComplexityCalculator {
         Matcher matcher = ENDPROC_PATTERN.matcher(line);
         if (matcher.find()) {
             saveSubroutine(state, complexities);
-            state.endSubroutine();
+            state.endFunction();
             return true;
         }
         return false;
@@ -188,7 +163,7 @@ public class Mos6502ComplexityCalculator implements ComplexityCalculator {
     /**
      * Processes DASM SUBROUTINE directive. Returns true if line was processed.
      */
-    private boolean processSubroutineDirective(String line, SubroutineState state, Map<String, Integer> complexities) {
+    private boolean processSubroutineDirective(String line, SubroutineState state) {
         Matcher matcher = SUBROUTINE_PATTERN.matcher(line);
         if (matcher.find()) {
             // DASM SUBROUTINE creates an anonymous boundary
@@ -211,13 +186,13 @@ public class Mos6502ComplexityCalculator implements ComplexityCalculator {
             if (state.hasCandidate()) {
                 state.promoteLabelCandidate();
                 saveSubroutine(state, complexities);
-                state.endSubroutine();
+                state.endFunction();
                 return true;
             }
             // If we're in a .proc block, RTS ends the subroutine
-            else if (state.hasSubroutine()) {
+            else if (state.hasFunction()) {
                 saveSubroutine(state, complexities);
-                state.endSubroutine();
+                state.endFunction();
                 return true;
             }
         }
@@ -227,13 +202,13 @@ public class Mos6502ComplexityCalculator implements ComplexityCalculator {
     /**
      * Processes label declaration. Returns true if line was processed.
      */
-    private boolean processLabel(String line, SubroutineState state, Map<String, Integer> complexities) {
+    private boolean processLabel(String line, SubroutineState state) {
         Matcher matcher = LABEL_PATTERN.matcher(line);
         if (matcher.find()) {
             String labelName = matcher.group(1);
 
             // If we're not in a subroutine, this could be a new subroutine
-            if (!state.hasSubroutine()) {
+            if (!state.hasFunction()) {
                 // Save any previous candidate
                 if (state.hasCandidate()) {
                     // Previous candidate didn't end with RTS, might be data label
@@ -247,44 +222,8 @@ public class Mos6502ComplexityCalculator implements ComplexityCalculator {
         return false;
     }
 
-    /**
-     * Calculates complexity for files without explicit subroutine declarations.
-     */
-    private int calculateGlobalComplexity(String sourceCode) throws IOException {
-        int totalComplexity = 1;
-        BufferedReader reader = new BufferedReader(new StringReader(sourceCode));
-        String line;
-        while ((line = reader.readLine()) != null) {
-            String trimmed = preprocessLine(line);
-            if (trimmed != null) {
-                totalComplexity += countDecisionPoints(trimmed);
-            }
-        }
-        return totalComplexity;
-    }
-
-    /**
-     * Preprocesses a line by trimming and removing comments.
-     * @return the preprocessed line, or null if the line should be skipped
-     */
-    private String preprocessLine(String line) {
-        String trimmed = line.trim();
-
-        // Skip empty lines and comments
-        if (trimmed.isEmpty() || trimmed.startsWith(";")) {
-            return null;
-        }
-
-        // Remove inline comments
-        int commentPos = trimmed.indexOf(';');
-        if (commentPos >= 0) {
-            trimmed = trimmed.substring(0, commentPos).trim();
-        }
-
-        return trimmed;
-    }
-
-    private int countDecisionPoints(String instruction) {
+    @Override
+    protected int countDecisionPoints(String instruction) {
         int count = 0;
 
         // Extract the opcode (first word)

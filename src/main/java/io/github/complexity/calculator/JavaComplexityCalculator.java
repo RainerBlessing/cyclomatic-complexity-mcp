@@ -6,8 +6,8 @@ import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.stmt.*;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
+import io.github.complexity.exception.ParsingException;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,12 +17,12 @@ import java.util.Map;
 public class JavaComplexityCalculator implements ComplexityCalculator {
 
     @Override
-    public ComplexityResult calculate(String sourceCode, String fileName) throws IOException {
+    public ComplexityResult calculate(String sourceCode, String fileName) throws ParsingException {
         JavaParser parser = new JavaParser();
         var parseResult = parser.parse(sourceCode);
 
         if (!parseResult.isSuccessful()) {
-            throw new IOException("Failed to parse Java code: " + parseResult.getProblems());
+            throw new ParsingException("Java", fileName, parseResult.getProblems().toString());
         }
 
         CompilationUnit cu = parseResult.getResult().orElseThrow();

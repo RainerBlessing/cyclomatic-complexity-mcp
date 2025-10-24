@@ -1,6 +1,6 @@
 package io.github.complexity.calculator;
 
-import java.io.IOException;
+import io.github.complexity.exception.ComplexityException;
 
 /**
  * Interface for cyclomatic complexity calculators
@@ -12,9 +12,9 @@ public interface ComplexityCalculator {
      * @param sourceCode The source code to analyze
      * @param fileName The file name (for reporting)
      * @return ComplexityResult containing the analysis
-     * @throws IOException if there's an error reading or parsing the code
+     * @throws ComplexityException if there's an error reading or parsing the code
      */
-    ComplexityResult calculate(String sourceCode, String fileName) throws IOException;
+    ComplexityResult calculate(String sourceCode, String fileName) throws ComplexityException;
 
     /**
      * Get the language this calculator supports

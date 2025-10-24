@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
  * - Conditional returns
  * - Each function/procedure starts at complexity 1
  */
-public class AssemblerComplexityCalculator implements ComplexityCalculator {
+public class AssemblerComplexityCalculator extends AssemblerComplexityCalculatorBase {
 
     // Patterns for different assembler constructs
     private static final Pattern PROC_PATTERN = Pattern.compile(
@@ -25,32 +25,6 @@ public class AssemblerComplexityCalculator implements ComplexityCalculator {
         "^\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s+(ENDP|endp)\\b");
     private static final Pattern LABEL_PATTERN = Pattern.compile(
         "^\\s*([a-zA-Z_][a-zA-Z0-9_]*):");
-
-    /**
-     * Helper class to manage function parsing state.
-     */
-    private static class FunctionState {
-        String currentFunction;
-        int currentComplexity;
-
-        void startFunction(String name) {
-            this.currentFunction = name;
-            this.currentComplexity = 1;
-        }
-
-        void endFunction() {
-            this.currentFunction = null;
-            this.currentComplexity = 0;
-        }
-
-        void addComplexity(int points) {
-            this.currentComplexity += points;
-        }
-
-        boolean hasFunction() {
-            return currentFunction != null;
-        }
-    }
 
     // Conditional jump instructions
     private static final Set<String> CONDITIONAL_JUMPS = new HashSet<>(Arrays.asList(
@@ -74,8 +48,7 @@ public class AssemblerComplexityCalculator implements ComplexityCalculator {
     ));
 
     @Override
-    public ComplexityResult calculate(String sourceCode, String fileName) throws IOException {
-        Map<String, Integer> complexities = new HashMap<>();
+    protected void parseSourceCode(String sourceCode, Map<String, Integer> complexities) throws IOException {
         FunctionState state = new FunctionState();
 
         BufferedReader reader = new BufferedReader(new StringReader(sourceCode));
@@ -98,13 +71,6 @@ public class AssemblerComplexityCalculator implements ComplexityCalculator {
 
         // Save last function if exists
         saveFunction(state, complexities);
-
-        // If no functions found, treat whole file as one function
-        if (complexities.isEmpty()) {
-            complexities.put("_global_", calculateGlobalComplexity(sourceCode));
-        }
-
-        return new ComplexityResult(fileName, "Assembler", complexities);
     }
 
     /**
@@ -112,7 +78,7 @@ public class AssemblerComplexityCalculator implements ComplexityCalculator {
      */
     private void saveFunction(FunctionState state, Map<String, Integer> complexities) {
         if (state.hasFunction()) {
-            complexities.put(state.currentFunction, state.currentComplexity);
+            complexities.put(state.getCurrentFunction(), state.getCurrentComplexity());
         }
     }
 
@@ -158,44 +124,8 @@ public class AssemblerComplexityCalculator implements ComplexityCalculator {
         return false;
     }
 
-    /**
-     * Calculates complexity for files without explicit function declarations.
-     */
-    private int calculateGlobalComplexity(String sourceCode) throws IOException {
-        int totalComplexity = 1;
-        BufferedReader reader = new BufferedReader(new StringReader(sourceCode));
-        String line;
-        while ((line = reader.readLine()) != null) {
-            String trimmed = preprocessLine(line);
-            if (trimmed != null) {
-                totalComplexity += countDecisionPoints(trimmed);
-            }
-        }
-        return totalComplexity;
-    }
-
-    /**
-     * Preprocesses a line by trimming and removing comments.
-     * @return the preprocessed line, or null if the line should be skipped
-     */
-    private String preprocessLine(String line) {
-        String trimmed = line.trim();
-
-        // Skip empty lines and comments
-        if (trimmed.isEmpty() || trimmed.startsWith(";")) {
-            return null;
-        }
-
-        // Remove inline comments
-        int commentPos = trimmed.indexOf(';');
-        if (commentPos >= 0) {
-            trimmed = trimmed.substring(0, commentPos).trim();
-        }
-
-        return trimmed;
-    }
-
-    private int countDecisionPoints(String instruction) {
+    @Override
+    protected int countDecisionPoints(String instruction) {
         int count = 0;
 
         // Extract the opcode (first word)

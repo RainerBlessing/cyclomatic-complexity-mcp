@@ -6,6 +6,11 @@ import java.util.Map;
  * Result of cyclomatic complexity calculation
  */
 public class ComplexityResult {
+    /**
+     * Complexity threshold above which a warning indicator is shown
+     */
+    public static final int COMPLEXITY_WARNING_THRESHOLD = 10;
+
     private final String fileName;
     private final String language;
     private final Map<String, Integer> functionComplexities;
@@ -63,7 +68,7 @@ public class ComplexityResult {
         functionComplexities.entrySet().stream()
             .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
             .forEach(e -> {
-                String indicator = e.getValue() > 10 ? " ⚠️" : "";
+                String indicator = e.getValue() > COMPLEXITY_WARNING_THRESHOLD ? " ⚠️" : "";
                 sb.append(String.format("  %s: %d%s%n", e.getKey(), e.getValue(), indicator));
             });
 
