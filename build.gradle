@@ -1,0 +1,87 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'com.gradleup.shadow' version '9.2.2'
+}
+
+group = 'io.github.complexity'
+version = '1.0.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // JavaParser for Java code analysis
+    implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.25.8'
+
+    // JSON processing for MCP protocol
+    implementation 'com.google.code.gson:gson:2.10.1'
+
+    // SLF4J for logging
+    implementation 'org.slf4j:slf4j-simple:2.0.9'
+
+    // JUnit for testing
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.1'
+}
+
+application {
+    mainClass = 'io.github.complexity.mcp.McpServer'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+shadowJar {
+    archiveBaseName = 'cyclomatic-complexity-mcp'
+    archiveClassifier = ''
+    archiveVersion = ''
+    manifest {
+        attributes 'Main-Class': 'io.github.complexity.mcp.McpServer'
+    }
+}
+
+// Make build task depend on shadowJar
+build.dependsOn shadowJar
+
+tasks.register('install') {
+    dependsOn shadowJar
+    doLast {
+        println """
+
+========================================
+Build erfolgreich!
+========================================
+
+JAR-Datei: ${shadowJar.archiveFile.get()}
+
+Nächste Schritte:
+1. Fügen Sie den MCP Server zu Ihrer Claude Config hinzu:
+
+   {
+     "mcpServers": {
+       "cyclomatic-complexity": {
+         "command": "java",
+         "args": [
+           "-jar",
+           "${shadowJar.archiveFile.get()}"
+         ]
+       }
+     }
+   }
+
+2. Starten Sie Claude Code neu
+
+3. Testen Sie mit:
+   "Analysiere die Komplexität von examples/Example.java"
+
+========================================
+        """
+    }
+}

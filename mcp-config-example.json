@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "cyclomatic-complexity": {
+      "command": "java",
+      "args": [
+        "-jar",
+        "/home/rainer/projekte/cyclomatic-complexity-mcp/build/libs/cyclomatic-complexity-mcp.jar"
+      ]
+    }
+  }
+}
