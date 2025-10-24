@@ -4,135 +4,135 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Cyclomatic Complexity MCP Server - Ein Model Context Protocol Server zur Berechnung der zyklomatischen Komplexität für Java und Assembler (x86/x64) Code.
+Cyclomatic Complexity MCP Server - A Model Context Protocol Server for calculating cyclomatic complexity of Java and Assembler (x86/x64) code.
 
-**Hauptzweck**: Integration mit Claude Code, um automatisch Code-Komplexität zu analysieren und Refactoring-Kandidaten zu identifizieren.
+**Main Purpose**: Integration with Claude Code to automatically analyze code complexity and identify refactoring candidates.
 
 ## Build Commands
 
-**WICHTIG**: Verwenden Sie immer `./gradlew` (Gradle Wrapper) statt `gradle` um Versionskonflikte zu vermeiden.
+**IMPORTANT**: Always use `./gradlew` (Gradle Wrapper) instead of `gradle` to avoid version conflicts.
 
-### Projekt bauen
+### Build project
 ```bash
 ./gradlew clean build
 ```
 
-Erstellt: `build/libs/cyclomatic-complexity-mcp.jar` (Shadow JAR mit allen Dependencies)
+Creates: `build/libs/cyclomatic-complexity-mcp.jar` (Shadow JAR with all dependencies)
 
-### Schneller Build (ohne clean)
+### Quick build (without clean)
 ```bash
 ./gradlew build
 ```
 
-### Tests ausführen
+### Run tests
 ```bash
 ./gradlew test
 ```
 
-### Einzelnen Test ausführen
+### Run single test
 ```bash
 ./gradlew test --tests "ClassName.testMethodName"
 ```
 
-### Build mit Debug-Info
+### Build with debug info
 ```bash
 ./gradlew build --info
 ```
 
-### Shadow JAR bauen (mit allen Dependencies)
+### Build Shadow JAR (with all dependencies)
 ```bash
 ./gradlew shadowJar
 ```
 
-### Gradle Wrapper aktualisieren
+### Update Gradle Wrapper
 ```bash
 gradle wrapper --gradle-version 9.1
 ```
 
 ## Project Architecture
 
-### Hauptkomponenten
+### Main Components
 
 1. **MCP Server** (`io.github.complexity.mcp.McpServer`)
-   - Implementiert JSON-RPC über stdin/stdout
-   - Handelt MCP-Protokoll Requests: initialize, tools/list, tools/call
-   - Entry Point der Anwendung
+   - Implements JSON-RPC over stdin/stdout
+   - Handles MCP protocol requests: initialize, tools/list, tools/call
+   - Application entry point
 
 2. **Complexity Calculators** (`io.github.complexity.calculator`)
-   - **Interface**: `ComplexityCalculator` - Basis-Interface für alle Analyzer
-   - **JavaComplexityCalculator**: Nutzt JavaParser für AST-basierte Analyse
-   - **AssemblerComplexityCalculator**: Pattern-basierte Analyse für x86/x64 ASM
-   - **ComplexityResult**: DTO für Analyse-Ergebnisse
+   - **Interface**: `ComplexityCalculator` - Base interface for all analyzers
+   - **JavaComplexityCalculator**: Uses JavaParser for AST-based analysis
+   - **AssemblerComplexityCalculator**: Pattern-based analysis for x86/x64 ASM
+   - **ComplexityResult**: DTO for analysis results
 
-### Package-Struktur
+### Package Structure
 
 ```
 io.github.complexity/
 ├── calculator/
 │   ├── ComplexityCalculator.java       # Interface
 │   ├── ComplexityResult.java           # Data Transfer Object
-│   ├── JavaComplexityCalculator.java   # Java-Implementierung
-│   └── AssemblerComplexityCalculator.java # ASM-Implementierung
+│   ├── JavaComplexityCalculator.java   # Java implementation
+│   └── AssemblerComplexityCalculator.java # ASM implementation
 └── mcp/
     └── McpServer.java                   # MCP Protocol Handler
 ```
 
-### Zyklomatische Komplexität Berechnung
+### Cyclomatic Complexity Calculation
 
-**Java** (AST-basiert via JavaParser):
+**Java** (AST-based via JavaParser):
 - Base Complexity: 1
-- +1 für: if, for, while, do-while, for-each, switch cases, catch, ternary (?:), && und || Operatoren
+- +1 for: if, for, while, do-while, for-each, switch cases, catch, ternary (?:), && and || operators
 
-**Assembler** (Pattern-basiert):
+**Assembler** (Pattern-based):
 - Base Complexity: 1
-- +1 für: Conditional Jumps (JE, JNE, JZ, JG, etc.), LOOP instructions, CMOV instructions
-- Erkennt PROC/ENDP blocks und Label-basierte Funktionen
+- +1 for: Conditional Jumps (JE, JNE, JZ, JG, etc.), LOOP instructions, CMOV instructions
+- Detects PROC/ENDP blocks and label-based functions
 
 ### MCP Protocol Flow
 
-1. **Initialize**: Client sendet initialize → Server antwortet mit capabilities
-2. **Tools List**: Client fragt verfügbare Tools ab → Server listet analyze_complexity, analyze_complexity_code
-3. **Tool Call**: Client ruft Tool → Server führt Analyse aus → Gibt formatted text zurück
+1. **Initialize**: Client sends initialize → Server responds with capabilities
+2. **Tools List**: Client requests available tools → Server lists analyze_complexity, analyze_complexity_code
+3. **Tool Call**: Client calls tool → Server performs analysis → Returns formatted text
 
 ### Dependencies
 
 - **JavaParser 3.25.8**: Java AST parsing
-- **Gson 2.10.1**: JSON serialization für MCP protocol
+- **Gson 2.10.1**: JSON serialization for MCP protocol
 - **SLF4J 2.0.9**: Logging
 - **JUnit 5.10.1**: Testing
 
 ### Build Configuration
 
 - **Gradle**: 9.1+ (via Wrapper)
-- **Java**: 17+ (Target: 17, Runtime: unterstützt bis Java 25)
-- **Shadow Plugin**: 9.2.2 (com.gradleup.shadow) - für Fat JAR Creation
+- **Java**: 17+ (Target: 17, Runtime: supports up to Java 25)
+- **Shadow Plugin**: 9.2.2 (com.gradleup.shadow) - for Fat JAR creation
 
 ## Development Guidelines
 
-### Neue Sprache hinzufügen
+### Adding a New Language
 
-1. Erstellen Sie `XyzComplexityCalculator implements ComplexityCalculator`
-2. Implementieren Sie `calculate()` und `getLanguage()`
-3. Registrieren Sie in `McpServer` constructor: `calculators.put("xyz", new XyzComplexityCalculator())`
-4. Aktualisieren Sie `detectLanguage()` für Auto-Detection
-5. Fügen Sie Tests und Beispiele hinzu
+1. Create `XyzComplexityCalculator implements ComplexityCalculator`
+2. Implement `calculate()` and `getLanguage()`
+3. Register in `McpServer` constructor: `calculators.put("xyz", new XyzComplexityCalculator())`
+4. Update `detectLanguage()` for auto-detection
+5. Add tests and examples
 
-### MCP Tool hinzufügen
+### Adding an MCP Tool
 
-1. Erstellen Sie Tool-Definition in `handleToolsList()`
-2. Implementieren Sie Handler-Methode (z.B. `handleNewTool()`)
-3. Fügen Sie Case in `handleToolsCall()` hinzu
-4. Aktualisieren Sie README mit Verwendungsbeispiel
+1. Create tool definition in `handleToolsList()`
+2. Implement handler method (e.g. `handleNewTool()`)
+3. Add case in `handleToolsCall()`
+4. Update README with usage example
 
 ### Testing
 
-- Manuelle Tests: `java -jar build/libs/cyclomatic-complexity-mcp.jar`
-- JSON-RPC Requests via stdin senden
-- Beispieldateien in `examples/` nutzen
+- Manual tests: `java -jar build/libs/cyclomatic-complexity-mcp.jar`
+- Send JSON-RPC requests via stdin
+- Use example files in `examples/`
 
 ### Logging
 
-Für Debug-Output:
+For debug output:
 ```bash
 java -Dorg.slf4j.simpleLogger.defaultLogLevel=debug \
      -jar build/libs/cyclomatic-complexity-mcp.jar
@@ -140,32 +140,32 @@ java -Dorg.slf4j.simpleLogger.defaultLogLevel=debug \
 
 ## Code Conventions
 
-- **Java 17** Features erlaubt
-- **Package Structure**: Feature-basiert (calculator, mcp, parser)
+- **Java 17** Features allowed
+- **Package Structure**: Feature-based (calculator, mcp, parser)
 - **Naming**:
   - Classes: PascalCase
   - Methods: camelCase
   - Constants: UPPER_SNAKE_CASE
-- **Error Handling**: Exceptions mit aussagekräftigen Messages
-- **Logging**: SLF4J für alle Log-Ausgaben (NICHT System.out für Server-Logik)
+- **Error Handling**: Exceptions with meaningful messages
+- **Logging**: SLF4J for all log output (NOT System.out for server logic)
 
 ## Important Notes
 
-- **Stdin/Stdout**: Server nutzt stdio für MCP communication. Kein System.out.println() im Server-Code!
-- **JSON-RPC Format**: Strict adherence zu JSON-RPC 2.0 spec erforderlich
-- **Blocking I/O**: Server ist single-threaded, blockiert auf stdin reads
-- **Error Responses**: Immer proper JSON-RPC error objects zurückgeben
+- **Stdin/Stdout**: Server uses stdio for MCP communication. No System.out.println() in server code!
+- **JSON-RPC Format**: Strict adherence to JSON-RPC 2.0 spec required
+- **Blocking I/O**: Server is single-threaded, blocks on stdin reads
+- **Error Responses**: Always return proper JSON-RPC error objects
 
 ## Configuration
 
-MCP Server wird via Claude Code config.json konfiguriert:
+MCP Server is configured via Claude Code config.json:
 
 ```json
 {
   "mcpServers": {
     "cyclomatic-complexity": {
       "command": "java",
-      "args": ["-jar", "/pfad/zu/build/libs/cyclomatic-complexity-mcp.jar"]
+      "args": ["-jar", "/path/to/build/libs/cyclomatic-complexity-mcp.jar"]
     }
   }
 }
@@ -173,16 +173,16 @@ MCP Server wird via Claude Code config.json konfiguriert:
 
 ## Troubleshooting
 
-### Server startet nicht
-- Prüfen: Java 17+ installiert (`java -version`)
-- Prüfen: JAR existiert in `build/libs/`
-- Neu bauen: `./gradlew clean build`
+### Server won't start
+- Check: Java 17+ installed (`java -version`)
+- Check: JAR exists in `build/libs/`
+- Rebuild: `./gradlew clean build`
 
-### Parsing-Fehler
-- **Java**: JavaParser erfordert syntaktisch korrekten Code
-- **Assembler**: Limitierte Dialect-Unterstützung (MASM/NASM/GAS)
+### Parsing errors
+- **Java**: JavaParser requires syntactically correct code
+- **Assembler**: Limited dialect support (MASM/NASM/GAS)
 
-### MCP Communication Fehler
-- Check JSON-RPC Format mit validator
+### MCP Communication errors
+- Check JSON-RPC format with validator
 - Enable debug logging
-- Test manual mit stdin/stdout
+- Test manually with stdin/stdout

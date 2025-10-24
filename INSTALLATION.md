@@ -1,6 +1,6 @@
-# Installation und Setup
+# Installation and Setup
 
-## Voraussetzungen installieren
+## Install Prerequisites
 
 ### Arch Linux / CachyOS
 
@@ -8,7 +8,7 @@
 sudo pacman -S jdk17-openjdk
 ```
 
-Optional (Gradle Wrapper wird empfohlen):
+Optional (Gradle Wrapper is recommended):
 ```bash
 sudo pacman -S gradle
 ```
@@ -32,34 +32,34 @@ sudo dnf install java-17-openjdk
 brew install openjdk@17
 ```
 
-## Projekt bauen
+## Build Project
 
-### Mit Gradle Wrapper (empfohlen - keine Gradle-Installation nötig)
+### With Gradle Wrapper (recommended - no Gradle installation needed)
 
 ```bash
 cd /home/rainer/projekte/cyclomatic-complexity-mcp
 ./gradlew clean build
 ```
 
-### Mit installiertem System-Gradle
+### With system-installed Gradle
 
 ```bash
 cd /home/rainer/projekte/cyclomatic-complexity-mcp
 gradle clean build
 ```
 
-Dies erstellt:
-- `build/libs/cyclomatic-complexity-mcp.jar` - Die ausführbare JAR-Datei
+This creates:
+- `build/libs/cyclomatic-complexity-mcp.jar` - The executable JAR file
 
-## MCP Server konfigurieren
+## Configure MCP Server
 
-### Für Claude Code
+### For Claude Code
 
-1. Öffnen Sie die Claude Code Konfiguration:
+1. Open the Claude Code configuration:
    - Linux: `~/.config/claude/config.json`
    - macOS: `~/Library/Application Support/Claude/config.json`
 
-2. Fügen Sie die MCP Server Konfiguration hinzu:
+2. Add the MCP server configuration:
 
 ```json
 {
@@ -75,80 +75,80 @@ Dies erstellt:
 }
 ```
 
-3. Starten Sie Claude Code neu
+3. Restart Claude Code
 
-## Testen
+## Testing
 
-### Manueller Test
+### Manual Test
 
-Sie können den Server manuell testen:
+You can test the server manually:
 
 ```bash
 cd /home/rainer/projekte/cyclomatic-complexity-mcp
 java -jar build/libs/cyclomatic-complexity-mcp.jar
 ```
 
-Dann senden Sie JSON-RPC Befehle via stdin:
+Then send JSON-RPC commands via stdin:
 
 ```json
 {"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}
 ```
 
-Der Server sollte mit einer Initialize-Response antworten.
+The server should respond with an initialize response.
 
-### Test mit Beispieldateien
+### Test with Example Files
 
-Nachdem der Server in Claude Code konfiguriert ist, können Sie fragen:
+After the server is configured in Claude Code, you can ask:
 
 ```
-Analysiere die Komplexität von /home/rainer/projekte/cyclomatic-complexity-mcp/examples/Example.java
+Analyze the complexity of /home/rainer/projekte/cyclomatic-complexity-mcp/examples/Example.java
 ```
 
-Claude Code wird automatisch das `analyze_complexity` Tool nutzen.
+Claude Code will automatically use the `analyze_complexity` tool.
 
 ## Troubleshooting
 
 ### "command not found: java"
 
-Java ist nicht installiert oder nicht im PATH. Installieren Sie Java 17+ (siehe oben).
+Java is not installed or not in PATH. Install Java 17+ (see above).
 
 ### "gradle: command not found"
 
-Nutzen Sie den Gradle Wrapper: `./gradlew` statt `gradle`
+Use the Gradle Wrapper: `./gradlew` instead of `gradle`
 
-### Server startet nicht in Claude Code
+### Server won't start in Claude Code
 
-1. Prüfen Sie den Pfad in der config.json
-2. Stellen Sie sicher, dass die JAR-Datei existiert
-3. Testen Sie den Server manuell
-4. Prüfen Sie die Logs von Claude Code
+1. Check the path in config.json
+2. Make sure the JAR file exists
+3. Test the server manually
+4. Check Claude Code logs
 
-### Parsing-Fehler
+### Parsing errors
 
-- **Java**: Stellen Sie sicher, dass der Code syntaktisch korrekt ist
-- **Assembler**: Unterstützt MASM/NASM/GAS Syntax, aber nicht alle Dialekte
+- **Java**: Make sure the code is syntactically correct
+- **Assembler**: Supports MASM/NASM/GAS syntax, but not all dialects
 
-## Entwicklung
+## Development
 
-### Tests ausführen (wenn implementiert)
+### Run tests (if implemented)
 
 ```bash
 ./gradlew test
 ```
 
-### Debug-Logging aktivieren
+### Enable debug logging
 
 ```bash
 java -Dorg.slf4j.simpleLogger.defaultLogLevel=debug \
      -jar build/libs/cyclomatic-complexity-mcp.jar
 ```
 
-### Code-Änderungen
+### Code changes
 
-Nach Änderungen am Code:
+After making code changes:
 
 ```bash
 ./gradlew clean build
 ```
 
-Dann Claude Code neu starten.
+Then restart Claude Code.

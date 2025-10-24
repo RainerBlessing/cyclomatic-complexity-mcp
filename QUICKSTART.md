@@ -1,48 +1,48 @@
 # Quick Start Guide
 
-## Schritt 1: Java installieren
+## Step 1: Install Java
 
 ```bash
-# Für Arch Linux / CachyOS
+# For Arch Linux / CachyOS
 sudo pacman -S jdk17-openjdk
 
-# Testen
+# Test
 java -version
 ```
 
-Sie sollten Java 17 oder höher sehen.
+You should see Java 17 or higher.
 
-## Schritt 2: Gradle Wrapper initialisieren
+## Step 2: Initialize Gradle Wrapper
 
-Da der Gradle Wrapper noch nicht vorhanden ist, müssen Sie Gradle einmalig installieren:
+Since the Gradle Wrapper is not yet present, you need to install Gradle once:
 
 ```bash
 # Arch Linux / CachyOS
 sudo pacman -S gradle
 
-# Ins Projekt-Verzeichnis wechseln
+# Change to project directory
 cd /home/rainer/projekte/cyclomatic-complexity-mcp
 
-# Gradle Wrapper initialisieren
+# Initialize Gradle Wrapper
 gradle wrapper --gradle-version 8.5
 
-# Optional: System-Gradle wieder deinstallieren
+# Optional: Uninstall system Gradle again
 # sudo pacman -Rs gradle
 ```
 
-## Schritt 3: Projekt bauen
+## Step 3: Build Project
 
 ```bash
 ./gradlew clean build
 ```
 
-Das war's! Die JAR-Datei befindet sich jetzt in `build/libs/cyclomatic-complexity-mcp.jar`
+That's it! The JAR file is now located at `build/libs/cyclomatic-complexity-mcp.jar`
 
-## Schritt 4: In Claude Code konfigurieren
+## Step 4: Configure in Claude Code
 
-1. Öffnen Sie `~/.config/claude/config.json`
+1. Open `~/.config/claude/config.json`
 
-2. Fügen Sie hinzu (oder erstellen Sie die Datei, falls sie nicht existiert):
+2. Add (or create the file if it doesn't exist):
 
 ```json
 {
@@ -58,57 +58,57 @@ Das war's! Die JAR-Datei befindet sich jetzt in `build/libs/cyclomatic-complexit
 }
 ```
 
-3. Claude Code neu starten
+3. Restart Claude Code
 
-## Schritt 5: Testen
+## Step 5: Test
 
 In Claude Code:
 
 ```
-Analysiere die Komplexität von /home/rainer/projekte/cyclomatic-complexity-mcp/examples/Example.java
+Analyze the complexity of /home/rainer/projekte/cyclomatic-complexity-mcp/examples/Example.java
 ```
 
-Sie sollten eine detaillierte Analyse der zyklomatischen Komplexität erhalten!
+You should receive a detailed cyclomatic complexity analysis!
 
-## Häufige Befehle
+## Common Commands
 
 ```bash
-# Projekt neu bauen
+# Rebuild project
 ./gradlew clean build
 
-# Schneller Build (ohne clean)
+# Quick build (without clean)
 ./gradlew build
 
-# Tests ausführen
+# Run tests
 ./gradlew test
 
-# Alle Tasks anzeigen
+# Show all tasks
 ./gradlew tasks
 
-# Mit Debug-Logging
+# With debug logging
 ./gradlew build --info
 ```
 
-## Direkter Test (ohne Claude Code)
+## Direct Test (without Claude Code)
 
 ```bash
-# Server starten
+# Start server
 java -jar build/libs/cyclomatic-complexity-mcp.jar
 
-# In einem anderen Terminal, JSON-RPC Request senden:
+# In another terminal, send JSON-RPC request:
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' | java -jar build/libs/cyclomatic-complexity-mcp.jar
 ```
 
-## Alternativ: Mit run.sh
+## Alternative: Using run.sh
 
 ```bash
 ./run.sh
 ```
 
-Dies baut das Projekt automatisch, falls nötig, und startet den Server.
+This automatically builds the project if necessary and starts the server.
 
-## Nächste Schritte
+## Next Steps
 
-- Lesen Sie [README.md](README.md) für Details zu Features und Verwendung
-- Schauen Sie sich [INSTALLATION.md](INSTALLATION.md) für Troubleshooting an
-- Prüfen Sie die Beispieldateien in `examples/`
+- Read [README.md](README.md) for details on features and usage
+- Check [INSTALLATION.md](INSTALLATION.md) for troubleshooting
+- Examine the example files in `examples/`

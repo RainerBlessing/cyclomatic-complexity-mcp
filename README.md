@@ -1,21 +1,21 @@
 # Cyclomatic Complexity MCP Server
 
-Ein Model Context Protocol (MCP) Server zur Berechnung der zyklomatischen Komplexität für Java und Assembler Code.
+A Model Context Protocol (MCP) Server for calculating cyclomatic complexity of Java and Assembler code.
 
 ## Features
 
-- **Java Analyse**: Nutzt JavaParser für präzise AST-basierte Komplexitätsberechnung
-- **Assembler Analyse**: Unterstützt x86/x64 Assembler (MASM/NASM/GAS Syntax)
-- **MCP Integration**: Funktioniert direkt mit Claude Code
-- **Detaillierte Metriken**: Zeigt Komplexität pro Funktion/Methode
-- **Warnungen**: Markiert Funktionen mit hoher Komplexität (>10)
+- **Java Analysis**: Uses JavaParser for precise AST-based complexity calculation
+- **Assembler Analysis**: Supports x86/x64 Assembler (MASM/NASM/GAS syntax)
+- **MCP Integration**: Works directly with Claude Code
+- **Detailed Metrics**: Shows complexity per function/method
+- **Warnings**: Marks functions with high complexity (>10)
 
 ## Installation
 
-### Voraussetzungen
+### Prerequisites
 
-- Java 17 oder höher
-- Gradle 8.0 oder höher (oder verwenden Sie den Gradle Wrapper: `./gradlew`)
+- Java 17 or higher
+- Gradle 8.0 or higher (or use the Gradle Wrapper: `./gradlew`)
 
 ### Build
 
@@ -24,16 +24,16 @@ cd cyclomatic-complexity-mcp
 ./gradlew clean build
 ```
 
-Dies erstellt eine ausführbare JAR-Datei: `build/libs/cyclomatic-complexity-mcp.jar`
+This creates an executable JAR file: `build/libs/cyclomatic-complexity-mcp.jar`
 
-Alternativ mit installiertem System-Gradle:
+Alternatively with system-installed Gradle:
 ```bash
 gradle clean build
 ```
 
-## Konfiguration für Claude Code
+## Configuration for Claude Code
 
-Fügen Sie folgende Konfiguration zu Ihrer Claude Code Konfiguration hinzu (`~/.config/claude/config.json` oder `~/Library/Application Support/Claude/config.json` auf macOS):
+Add the following configuration to your Claude Code configuration (`~/.config/claude/config.json` or `~/Library/Application Support/Claude/config.json` on macOS):
 
 ```json
 {
@@ -42,58 +42,58 @@ Fügen Sie folgende Konfiguration zu Ihrer Claude Code Konfiguration hinzu (`~/.
       "command": "java",
       "args": [
         "-jar",
-        "/absoluter/pfad/zu/cyclomatic-complexity-mcp/build/libs/cyclomatic-complexity-mcp.jar"
+        "/absolute/path/to/cyclomatic-complexity-mcp/build/libs/cyclomatic-complexity-mcp.jar"
       ]
     }
   }
 }
 ```
 
-Ersetzen Sie `/absoluter/pfad/zu/` mit dem tatsächlichen Pfad zum Projekt.
+Replace `/absolute/path/to/` with the actual path to the project.
 
-## Verwendung
+## Usage
 
-Nach der Konfiguration kann Claude Code automatisch auf zwei Tools zugreifen:
+After configuration, Claude Code can automatically access two tools:
 
-### 1. `analyze_complexity` - Datei analysieren
+### 1. `analyze_complexity` - Analyze file
 
-Analysiert eine Datei anhand ihres Pfades:
-
-```
-Analysiere die Komplexität von src/Main.java
-```
-
-### 2. `analyze_complexity_code` - Code-String analysieren
-
-Analysiert direkt übergebenen Code:
+Analyzes a file by its path:
 
 ```
-Analysiere die Komplexität dieses Java Codes:
-[Code hier einfügen]
+Analyze the complexity of src/Main.java
 ```
 
-## Unterstützte Sprachen
+### 2. `analyze_complexity_code` - Analyze code string
+
+Analyzes directly provided code:
+
+```
+Analyze the complexity of this Java code:
+[Insert code here]
+```
+
+## Supported Languages
 
 ### Java
-- Erkennt: if, else, for, while, do-while, switch/case, catch, ternary (?:)
-- Zählt: &&, || Operatoren in Bedingungen
-- Basis-Komplexität: 1 pro Methode
+- Detects: if, else, for, while, do-while, switch/case, catch, ternary (?:)
+- Counts: &&, || operators in conditions
+- Base complexity: 1 per method
 
 ### Assembler (x86/x64)
-- Erkennt: Alle konditionalen Sprünge (JE, JNE, JZ, JG, JL, etc.)
-- Zählt: LOOP-Instruktionen, konditionale MOVEs (CMOV*)
-- Unterstützt: PROC/ENDP Blöcke und Label-basierte Funktionen
+- Detects: All conditional jumps (JE, JNE, JZ, JG, JL, etc.)
+- Counts: LOOP instructions, conditional MOVEs (CMOV*)
+- Supports: PROC/ENDP blocks and label-based functions
 
-## Komplexitäts-Metriken
+## Complexity Metrics
 
-Die Zyklomatische Komplexität (McCabe) wird wie folgt berechnet:
+Cyclomatic Complexity (McCabe) is calculated as follows:
 
-- **1-10**: Einfach, gut wartbar
-- **11-20**: Moderat komplex, sollte überprüft werden ⚠️
-- **21-50**: Komplex, Refactoring empfohlen
-- **>50**: Sehr komplex, dringend überarbeiten
+- **1-10**: Simple, well maintainable
+- **11-20**: Moderately complex, should be reviewed ⚠️
+- **21-50**: Complex, refactoring recommended
+- **>50**: Very complex, urgently needs refactoring
 
-## Beispiel-Output
+## Example Output
 
 ```
 File: Calculator.java (Java)
@@ -109,22 +109,22 @@ Function Complexities:
   subtract(int, int): 1
 ```
 
-## Entwicklung
+## Development
 
-### Projekt-Struktur
+### Project Structure
 
 ```
 src/main/java/io/github/complexity/
 ├── calculator/
 │   ├── ComplexityCalculator.java       # Interface
 │   ├── ComplexityResult.java           # Result DTO
-│   ├── JavaComplexityCalculator.java   # Java Implementierung
-│   └── AssemblerComplexityCalculator.java # ASM Implementierung
+│   ├── JavaComplexityCalculator.java   # Java implementation
+│   └── AssemblerComplexityCalculator.java # ASM implementation
 └── mcp/
     └── McpServer.java                   # MCP Server
 ```
 
-### Tests ausführen
+### Run tests
 
 ```bash
 ./gradlew test
@@ -132,16 +132,16 @@ src/main/java/io/github/complexity/
 
 ### Logging
 
-Der Server nutzt SLF4J mit Simple Logger. Log-Level kann über System Properties gesetzt werden:
+The server uses SLF4J with Simple Logger. Log level can be set via system properties:
 
 ```bash
 java -Dorg.slf4j.simpleLogger.defaultLogLevel=debug -jar build/libs/cyclomatic-complexity-mcp.jar
 ```
 
-## Lizenz
+## License
 
 MIT License
 
-## Beiträge
+## Contributing
 
-Beiträge sind willkommen! Bitte erstellen Sie ein Issue oder Pull Request.
+Contributions are welcome! Please create an issue or pull request.
