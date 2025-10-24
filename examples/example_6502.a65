@@ -1,0 +1,109 @@
+; Example 6502 Assembly Code
+; Demonstrates various complexity scenarios for the complexity calculator
+;
+; This file uses ca65 syntax and includes .proc/.endproc blocks
+; Complexity calculation:
+; - Base complexity: 1 per subroutine
+; - +1 for each conditional branch (BEQ, BNE, BCC, BCS, BPL, BMI, BVC, BVS)
+
+.segment "CODE"
+
+; Simple subroutine with no branches
+; Expected complexity: 1
+.proc init_system
+    LDA #$00
+    STA $D020    ; Border color
+    STA $D021    ; Background color
+    RTS
+.endproc
+
+; Subroutine with simple conditional
+; Expected complexity: 2 (base 1 + 1 branch)
+.proc check_zero
+    LDA $00
+    BEQ is_zero  ; +1 complexity
+    LDA #$01
+    RTS
+is_zero:
+    LDA #$00
+    RTS
+.endproc
+
+; More complex subroutine with multiple branches
+; Expected complexity: 5 (base 1 + 4 branches)
+.proc validate_input
+    LDA input_value
+    BEQ invalid      ; +1 complexity
+    BMI negative     ; +1 complexity
+    CMP #100
+    BCS too_large    ; +1 complexity
+    CMP #10
+    BCC too_small    ; +1 complexity
+    ; Input is valid (10-99)
+    LDA #$01
+    RTS
+invalid:
+    LDA #$FF
+    RTS
+negative:
+    LDA #$FE
+    RTS
+too_large:
+    LDA #$FD
+    RTS
+too_small:
+    LDA #$FC
+    RTS
+.endproc
+
+; Subroutine with loop-like structure
+; Expected complexity: 3 (base 1 + 2 branches)
+.proc sum_array
+    LDX #$00
+    LDA #$00
+loop:
+    CLC
+    ADC array,X
+    INX
+    CPX #10
+    BNE loop        ; +1 complexity (loop back)
+    STA result
+    BEQ zero_result ; +1 complexity
+    RTS
+zero_result:
+    LDA #$FF
+    RTS
+.endproc
+
+; Nested conditionals
+; Expected complexity: 4 (base 1 + 3 branches)
+.proc process_flags
+    LDA flags
+    AND #$01
+    BEQ not_flag1   ; +1 complexity
+    LDA flags
+    AND #$02
+    BEQ not_flag2   ; +1 complexity
+    ; Both flags set
+    LDA #$03
+    RTS
+not_flag2:
+    LDA #$01
+    RTS
+not_flag1:
+    LDA flags
+    AND #$02
+    BEQ neither     ; +1 complexity
+    LDA #$02
+    RTS
+neither:
+    LDA #$00
+    RTS
+.endproc
+
+; Data section
+.segment "DATA"
+input_value: .byte $00
+array: .res 10
+result: .byte $00
+flags: .byte $00

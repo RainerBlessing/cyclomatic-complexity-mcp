@@ -1,13 +1,14 @@
 # Cyclomatic Complexity MCP Server
 
-A Model Context Protocol (MCP) Server for calculating cyclomatic complexity of Java and Assembler code.
+A Model Context Protocol (MCP) Server for calculating cyclomatic complexity of Java, x86/x64 Assembler, and 6502 Assembler code.
 
 ## Features
 
 - **Java Analysis**: Uses JavaParser for precise AST-based complexity calculation
-- **Assembler Analysis**: Supports x86/x64 Assembler (MASM/NASM/GAS syntax)
+- **x86/x64 Assembler Analysis**: Supports MASM/NASM/GAS syntax
+- **6502 Assembler Analysis**: Supports ca65, DASM, and generic 6502 syntax
 - **MCP Integration**: Works directly with Claude Code
-- **Detailed Metrics**: Shows complexity per function/method
+- **Detailed Metrics**: Shows complexity per function/method/subroutine
 - **Warnings**: Marks functions with high complexity (>10)
 
 ## Installation
@@ -84,6 +85,16 @@ Analyze the complexity of this Java code:
 - Counts: LOOP instructions, conditional MOVEs (CMOV*)
 - Supports: PROC/ENDP blocks and label-based functions
 
+### 6502 Assembler
+- Detects: All conditional branches (BEQ, BNE, BCC, BCS, BPL, BMI, BVC, BVS)
+- Counts: Bit branches (BBR0-BBR7, BBS0-BBS7 for 65C02)
+- Supports:
+  - ca65 syntax (.proc/.endproc blocks)
+  - DASM syntax (SUBROUTINE directive)
+  - Generic label+RTS pattern
+- File extensions: .a65, .s65, .asm65, .a
+- Base complexity: 1 per subroutine
+
 ## Complexity Metrics
 
 Cyclomatic Complexity (McCabe) is calculated as follows:
@@ -116,12 +127,13 @@ Function Complexities:
 ```
 src/main/java/io/github/complexity/
 ├── calculator/
-│   ├── ComplexityCalculator.java       # Interface
-│   ├── ComplexityResult.java           # Result DTO
-│   ├── JavaComplexityCalculator.java   # Java implementation
-│   └── AssemblerComplexityCalculator.java # ASM implementation
+│   ├── ComplexityCalculator.java          # Interface
+│   ├── ComplexityResult.java              # Result DTO
+│   ├── JavaComplexityCalculator.java      # Java implementation
+│   ├── AssemblerComplexityCalculator.java # x86/x64 ASM implementation
+│   └── Mos6502ComplexityCalculator.java   # 6502 ASM implementation
 └── mcp/
-    └── McpServer.java                   # MCP Server
+    └── McpServer.java                      # MCP Server
 ```
 
 ### Run tests

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Cyclomatic Complexity MCP Server - A Model Context Protocol Server for calculating cyclomatic complexity of Java and Assembler (x86/x64) code.
+Cyclomatic Complexity MCP Server - A Model Context Protocol Server for calculating cyclomatic complexity of Java, x86/x64 Assembler, and 6502 Assembler code.
 
 **Main Purpose**: Integration with Claude Code to automatically analyze code complexity and identify refactoring candidates.
 
@@ -62,6 +62,7 @@ gradle wrapper --gradle-version 9.1
    - **Interface**: `ComplexityCalculator` - Base interface for all analyzers
    - **JavaComplexityCalculator**: Uses JavaParser for AST-based analysis
    - **AssemblerComplexityCalculator**: Pattern-based analysis for x86/x64 ASM
+   - **Mos6502ComplexityCalculator**: Pattern-based analysis for 6502 ASM
    - **ComplexityResult**: DTO for analysis results
 
 ### Package Structure
@@ -69,12 +70,13 @@ gradle wrapper --gradle-version 9.1
 ```
 io.github.complexity/
 ├── calculator/
-│   ├── ComplexityCalculator.java       # Interface
-│   ├── ComplexityResult.java           # Data Transfer Object
-│   ├── JavaComplexityCalculator.java   # Java implementation
-│   └── AssemblerComplexityCalculator.java # ASM implementation
+│   ├── ComplexityCalculator.java          # Interface
+│   ├── ComplexityResult.java              # Data Transfer Object
+│   ├── JavaComplexityCalculator.java      # Java implementation
+│   ├── AssemblerComplexityCalculator.java # x86/x64 ASM implementation
+│   └── Mos6502ComplexityCalculator.java   # 6502 ASM implementation
 └── mcp/
-    └── McpServer.java                   # MCP Protocol Handler
+    └── McpServer.java                      # MCP Protocol Handler
 ```
 
 ### Cyclomatic Complexity Calculation
@@ -83,10 +85,19 @@ io.github.complexity/
 - Base Complexity: 1
 - +1 for: if, for, while, do-while, for-each, switch cases, catch, ternary (?:), && and || operators
 
-**Assembler** (Pattern-based):
+**x86/x64 Assembler** (Pattern-based):
 - Base Complexity: 1
 - +1 for: Conditional Jumps (JE, JNE, JZ, JG, etc.), LOOP instructions, CMOV instructions
 - Detects PROC/ENDP blocks and label-based functions
+
+**6502 Assembler** (Pattern-based):
+- Base Complexity: 1 per subroutine
+- +1 for: Conditional branches (BEQ, BNE, BCC, BCS, BPL, BMI, BVC, BVS)
+- +1 for: Bit branches (BBR0-BBR7, BBS0-BBS7 for 65C02)
+- Detects subroutines via:
+  - ca65 .proc/.endproc blocks
+  - DASM SUBROUTINE directive
+  - Generic label + RTS pattern
 
 ### MCP Protocol Flow
 

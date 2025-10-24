@@ -24,6 +24,7 @@ public class McpServer {
         calculators.put("java", new JavaComplexityCalculator());
         calculators.put("asm", new AssemblerComplexityCalculator());
         calculators.put("s", new AssemblerComplexityCalculator());
+        calculators.put("6502", new Mos6502ComplexityCalculator());
     }
 
     public static void main(String[] args) {
@@ -110,7 +111,7 @@ public class McpServer {
         analyzeTool.addProperty("name", "analyze_complexity");
         analyzeTool.addProperty("description",
             "Analyzes the cyclomatic complexity of source code from a file. " +
-            "Supports Java and Assembler (x86/x64). Returns detailed complexity metrics " +
+            "Supports Java, x86/x64 Assembler, and 6502 Assembler. Returns detailed complexity metrics " +
             "for each function/method including total complexity and most complex functions.");
 
         JsonObject analyzeSchema = new JsonObject();
@@ -125,7 +126,7 @@ public class McpServer {
 
         JsonObject langProp = new JsonObject();
         langProp.addProperty("type", "string");
-        langProp.addProperty("description", "Language: 'java' or 'asm' (auto-detected from extension if not provided)");
+        langProp.addProperty("description", "Language: 'java', 'asm', or '6502' (auto-detected from extension if not provided)");
         analyzeProps.add("language", langProp);
 
         analyzeSchema.add("properties", analyzeProps);
@@ -142,7 +143,7 @@ public class McpServer {
         analyzeCodeTool.addProperty("name", "analyze_complexity_code");
         analyzeCodeTool.addProperty("description",
             "Analyzes the cyclomatic complexity of source code provided as a string. " +
-            "Supports Java and Assembler (x86/x64). Returns detailed complexity metrics " +
+            "Supports Java, x86/x64 Assembler, and 6502 Assembler. Returns detailed complexity metrics " +
             "for each function/method.");
 
         JsonObject codeSchema = new JsonObject();
@@ -157,7 +158,7 @@ public class McpServer {
 
         JsonObject codeLangProp = new JsonObject();
         codeLangProp.addProperty("type", "string");
-        codeLangProp.addProperty("description", "Language: 'java' or 'asm'");
+        codeLangProp.addProperty("description", "Language: 'java', 'asm', or '6502'");
         codeProps.add("language", codeLangProp);
 
         JsonObject fileNameProp = new JsonObject();
@@ -269,6 +270,9 @@ public class McpServer {
             return "java";
         } else if (lower.endsWith(".asm") || lower.endsWith(".s")) {
             return "asm";
+        } else if (lower.endsWith(".a65") || lower.endsWith(".s65") ||
+                   lower.endsWith(".asm65") || lower.endsWith(".a")) {
+            return "6502";
         }
         throw new IllegalArgumentException("Cannot detect language from file extension: " + filePath);
     }
