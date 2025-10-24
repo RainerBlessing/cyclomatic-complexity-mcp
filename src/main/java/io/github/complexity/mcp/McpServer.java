@@ -1,6 +1,7 @@
 package io.github.complexity.mcp;
 
 import com.google.gson.*;
+import io.github.complexity.calculator.CalculatorFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,16 +20,13 @@ public class McpServer {
     private static final Logger logger = LoggerFactory.getLogger(McpServer.class);
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
-    private final CalculatorRegistry calculatorRegistry;
-    private final LanguageDetector languageDetector;
     private final McpProtocolHandler protocolHandler;
     private final ToolRegistry toolRegistry;
 
     public McpServer() {
-        this.calculatorRegistry = new CalculatorRegistry();
-        this.languageDetector = new LanguageDetector(calculatorRegistry);
+        CalculatorFactory calculatorFactory = new CalculatorFactory();
         this.protocolHandler = new McpProtocolHandler();
-        this.toolRegistry = new ToolRegistry(calculatorRegistry, languageDetector);
+        this.toolRegistry = new ToolRegistry(calculatorFactory);
     }
 
     public static void main(String[] args) {

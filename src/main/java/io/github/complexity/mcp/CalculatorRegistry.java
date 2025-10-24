@@ -3,9 +3,11 @@ package io.github.complexity.mcp;
 import io.github.complexity.calculator.*;
 import io.github.complexity.exception.UnsupportedLanguageException;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Registry for complexity calculators
@@ -13,47 +15,50 @@ import java.util.Set;
  */
 public class CalculatorRegistry {
 
-    private final Map<String, ComplexityCalculator> calculators = new HashMap<>();
+    private final CalculatorFactory calculatorFactory;
+    private final Map<Language, ComplexityCalculator> calculatorCache = new HashMap<>();
 
-    public CalculatorRegistry() {
-        // Register default calculators
-        registerCalculator("java", new JavaComplexityCalculator());
-        registerCalculator("asm", new AssemblerComplexityCalculator());
-        registerCalculator("s", new AssemblerComplexityCalculator());
-        registerCalculator("6502", new Mos6502ComplexityCalculator());
+    public CalculatorRegistry(CalculatorFactory calculatorFactory) {
+        this.calculatorFactory = calculatorFactory;
     }
 
     /**
-     * Register a calculator for a specific language
-     */
-    public void registerCalculator(String language, ComplexityCalculator calculator) {
-        calculators.put(language.toLowerCase(), calculator);
-    }
-
-    /**
-     * Get calculator for a specific language
+     * Get calculator for a specific language (with caching)
      *
      * @throws UnsupportedLanguageException if language is not supported
      */
-    public ComplexityCalculator getCalculator(String language) throws UnsupportedLanguageException {
-        ComplexityCalculator calculator = calculators.get(language.toLowerCase());
-        if (calculator == null) {
-            throw new UnsupportedLanguageException(language, getSupportedLanguages());
+    public ComplexityCalculator getCalculator(Language language) throws UnsupportedLanguageException {
+        // Check cache first
+        if (calculatorCache.containsKey(language)) {
+            return calculatorCache.get(language);
         }
-        return calculator;
+
+        // Create new calculator
+        try {
+            ComplexityCalculator calculator = calculatorFactory.createCalculator(language);
+            calculatorCache.put(language, calculator);
+            return calculator;
+        } catch (IllegalArgumentException e) {
+            throw new UnsupportedLanguageException(
+                language.getKey(),
+                getSupportedLanguageKeys()
+            );
+        }
     }
 
     /**
-     * Get all supported languages
+     * Get all supported language keys
      */
-    public Set<String> getSupportedLanguages() {
-        return calculators.keySet();
+    public Set<String> getSupportedLanguageKeys() {
+        return Arrays.stream(Language.values())
+            .map(Language::getKey)
+            .collect(Collectors.toSet());
     }
 
     /**
      * Check if a language is supported
      */
-    public boolean isLanguageSupported(String language) {
-        return calculators.containsKey(language.toLowerCase());
+    public boolean isLanguageSupported(Language language) {
+        return calculatorFactory.hasCalculator(language);
     }
 }

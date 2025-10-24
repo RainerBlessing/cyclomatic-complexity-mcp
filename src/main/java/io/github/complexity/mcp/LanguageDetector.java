@@ -1,53 +1,48 @@
 package io.github.complexity.mcp;
 
+import io.github.complexity.calculator.Language;
 import io.github.complexity.exception.UnsupportedLanguageException;
 
+import java.util.Arrays;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Detects programming language from file extensions
  */
 public class LanguageDetector {
 
-    private final CalculatorRegistry calculatorRegistry;
-
-    public LanguageDetector(CalculatorRegistry calculatorRegistry) {
-        this.calculatorRegistry = calculatorRegistry;
-    }
-
     /**
      * Detect language from file path
      *
      * @param filePath The file path to analyze
-     * @return The detected language key
+     * @return The detected language
      * @throws UnsupportedLanguageException if language cannot be detected
      */
-    public String detectLanguage(String filePath) throws UnsupportedLanguageException {
-        String lower = filePath.toLowerCase();
+    public Language detectLanguage(String filePath) throws UnsupportedLanguageException {
+        Optional<Language> detected = Language.fromFilePath(filePath);
 
-        if (lower.endsWith(".java")) {
-            return "java";
-        } else if (lower.endsWith(".asm") || lower.endsWith(".s")) {
-            return "asm";
-        } else if (lower.endsWith(".a65") || lower.endsWith(".s65") ||
-                   lower.endsWith(".asm65") || lower.endsWith(".a")) {
-            return "6502";
+        if (detected.isEmpty()) {
+            // Extract extension for error message
+            int lastDot = filePath.lastIndexOf('.');
+            String extension = lastDot > 0 ? filePath.substring(lastDot) : "<no extension>";
+
+            throw new UnsupportedLanguageException(
+                "file with extension '" + extension + "'",
+                getSupportedLanguageKeys()
+            );
         }
 
-        // Extract extension for error message
-        int lastDot = filePath.lastIndexOf('.');
-        String extension = lastDot > 0 ? filePath.substring(lastDot) : "<no extension>";
-
-        throw new UnsupportedLanguageException(
-            "file with extension '" + extension + "'",
-            calculatorRegistry.getSupportedLanguages()
-        );
+        return detected.get();
     }
 
     /**
-     * Get supported languages
+     * Get all supported language keys
      */
-    public Set<String> getSupportedLanguages() {
-        return calculatorRegistry.getSupportedLanguages();
+    public Set<String> getSupportedLanguageKeys() {
+        return Arrays.stream(Language.values())
+            .map(Language::getKey)
+            .collect(Collectors.toSet());
     }
 }
