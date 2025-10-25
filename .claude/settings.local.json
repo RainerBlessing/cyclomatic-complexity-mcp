@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gradle wrapper:*)",
+      "Bash(./gradlew clean build:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(pacman -Ss:*)",
+      "Bash(sudo pacman:*)",
+      "Read(//home/rainer/.config/claude/**)",
+      "Bash(java:*)",
+      "Bash(cat:*)",
+      "Bash(./gradlew test:*)",
+      "Bash(./gradlew compileJava:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(gh:*)",
+      "Bash(git remote add:*)",
+      "Bash(git push:*)",
+      "Bash(git config:*)",
+      "Bash(git remote set-url:*)",
+      "Read(//home/rainer/.cache/claude-cli-nodejs/-home-rainer-projekte-C64-hello/**)",
+      "Read(//home/rainer/projekte/C64/hello/**)",
+      "Bash(xargs cat:*)",
+      "Bash(chmod:*)",
+      "WebFetch(domain:spec.modelcontextprotocol.io)",
+      "Bash(./test-handshake.sh)",
+      "Read(//tmp/**)",
+      "Bash(./gradlew build:*)",
+      "Bash(git checkout:*)",
+      "Bash(git cherry-pick:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
