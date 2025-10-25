@@ -97,7 +97,16 @@ io.github.complexity/
 - Detects subroutines via:
   - ca65 .proc/.endproc blocks
   - DASM SUBROUTINE directive
+  - ACME !zone directive
   - Generic label + RTS pattern
+
+**Automatic Language Detection**:
+- `.java` files → Java
+- `.a65`, `.s65`, `.asm65`, `.a` files → 6502 Assembler
+- `.asm`, `.s` files → Content-based detection analyzes instructions to distinguish between 6502 and x86/x64:
+  - Counts 6502-specific instructions (LDA, STA, BEQ, etc.) and directives (.proc, SUBROUTINE, etc.)
+  - Counts x86-specific instructions (MOV, PUSH, JE, etc.) and registers (RAX, EAX, etc.)
+  - Selects architecture with higher confidence score
 
 ### MCP Protocol Flow
 

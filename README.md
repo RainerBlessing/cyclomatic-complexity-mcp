@@ -91,9 +91,12 @@ Analyze the complexity of this Java code:
 - Supports:
   - ca65 syntax (.proc/.endproc blocks)
   - DASM syntax (SUBROUTINE directive)
+  - ACME syntax (!zone directive)
   - Generic label+RTS pattern
-- File extensions: .a65, .s65, .asm65, .a
+- File extensions: .a65, .s65, .asm65, .a, .asm*, .s*
 - Base complexity: 1 per subroutine
+
+**Note**: `.asm` and `.s` files are automatically detected as either 6502 or x86/x64 based on content analysis. The analyzer counts architecture-specific instructions and directives to determine the correct type. Empty files or ambiguous code defaults to x86.
 
 ## Complexity Metrics
 

@@ -9,6 +9,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * MCP Server for cyclomatic complexity analysis
@@ -274,17 +275,123 @@ public class McpServer {
         return result.getSummary();
     }
 
-    private String detectLanguage(String filePath) {
+    private String detectLanguage(String filePath) throws IOException {
         String lower = filePath.toLowerCase();
         if (lower.endsWith(".java")) {
             return "java";
         } else if (lower.endsWith(".asm") || lower.endsWith(".s")) {
-            return "asm";
+            // Ambiguous extension - need to analyze content
+            String sourceCode = new String(Files.readAllBytes(Paths.get(filePath)));
+            return detectAssemblerType(sourceCode);
         } else if (lower.endsWith(".a65") || lower.endsWith(".s65") ||
                    lower.endsWith(".asm65") || lower.endsWith(".a")) {
             return "6502";
         }
         throw new IllegalArgumentException("Cannot detect language from file extension: " + filePath);
+    }
+
+    // Precompiled regex patterns for assembler detection (performance optimization)
+    private static final int DIRECTIVE_WEIGHT = 2;
+
+    // 6502-specific instructions (that don't exist in x86)
+    private static final Pattern[] PATTERNS_6502_INSTR = {
+        Pattern.compile("\\bLDA\\b"), Pattern.compile("\\bLDX\\b"), Pattern.compile("\\bLDY\\b"),
+        Pattern.compile("\\bSTA\\b"), Pattern.compile("\\bSTX\\b"), Pattern.compile("\\bSTY\\b"),
+        Pattern.compile("\\bINX\\b"), Pattern.compile("\\bINY\\b"), Pattern.compile("\\bDEX\\b"),
+        Pattern.compile("\\bDEY\\b"), Pattern.compile("\\bBEQ\\b"), Pattern.compile("\\bBNE\\b"),
+        Pattern.compile("\\bBCC\\b"), Pattern.compile("\\bBCS\\b"), Pattern.compile("\\bBPL\\b"),
+        Pattern.compile("\\bBMI\\b"), Pattern.compile("\\bBVC\\b"), Pattern.compile("\\bBVS\\b"),
+        Pattern.compile("\\bPHA\\b"), Pattern.compile("\\bPLA\\b"), Pattern.compile("\\bPHP\\b"),
+        Pattern.compile("\\bPLP\\b"), Pattern.compile("\\bSEC\\b"), Pattern.compile("\\bCLC\\b"),
+        Pattern.compile("\\bSED\\b"), Pattern.compile("\\bCLD\\b"), Pattern.compile("\\bSEI\\b"),
+        Pattern.compile("\\bCLI\\b"), Pattern.compile("\\bCLV\\b"), Pattern.compile("\\bADC\\b"),
+        Pattern.compile("\\bSBC\\b"), Pattern.compile("\\bCMP\\b"), Pattern.compile("\\bCPX\\b"),
+        Pattern.compile("\\bCPY\\b"), Pattern.compile("\\bRTS\\b"), Pattern.compile("\\bRTI\\b"),
+        Pattern.compile("\\bJSR\\b")
+    };
+
+    // 6502-specific directives
+    private static final Pattern[] PATTERNS_6502_DIRECTIVES = {
+        Pattern.compile("\\bPROCESSOR\\s+6502\\b"), Pattern.compile("\\.PROC\\b"),
+        Pattern.compile("\\.ENDPROC\\b"), Pattern.compile("\\bSUBROUTINE\\b"),
+        Pattern.compile("\\b!ZONE\\b"), Pattern.compile("\\b!ADDR\\b")
+    };
+
+    // x86-specific instructions (that don't exist in 6502)
+    private static final Pattern[] PATTERNS_X86_INSTR = {
+        Pattern.compile("\\bMOV\\b"), Pattern.compile("\\bPUSH\\b"), Pattern.compile("\\bPOP\\b"),
+        Pattern.compile("\\bCALL\\b"), Pattern.compile("\\bRET\\b"), Pattern.compile("\\bADD\\b"),
+        Pattern.compile("\\bSUB\\b"), Pattern.compile("\\bXOR\\b"), Pattern.compile("\\bAND\\b"),
+        Pattern.compile("\\bOR\\b"), Pattern.compile("\\bLEA\\b"), Pattern.compile("\\bJMP\\b"),
+        Pattern.compile("\\bJE\\b"), Pattern.compile("\\bJNE\\b"), Pattern.compile("\\bJZ\\b"),
+        Pattern.compile("\\bJG\\b"), Pattern.compile("\\bJL\\b"), Pattern.compile("\\bINC\\b"),
+        Pattern.compile("\\bDEC\\b"), Pattern.compile("\\bNOP\\b"), Pattern.compile("\\bINT\\b"),
+        Pattern.compile("\\bCMOV\\b"), Pattern.compile("\\bSETCC\\b"), Pattern.compile("\\bLOOP\\b")
+    };
+
+    // x86-specific directives and registers
+    private static final Pattern[] PATTERNS_X86_DIRECTIVES = {
+        Pattern.compile("\\bSECTION\\b"), Pattern.compile("\\bSEGMENT\\b"),
+        Pattern.compile("\\bGLOBAL\\b"), Pattern.compile("\\bEXTERN\\b"),
+        Pattern.compile("\\b\\[RBP\\b"), Pattern.compile("\\b\\[RSP\\b"),
+        Pattern.compile("\\b\\[ESP\\b"), Pattern.compile("\\b\\[EBP\\b"),
+        Pattern.compile("\\bRAX\\b"), Pattern.compile("\\bRBX\\b"),
+        Pattern.compile("\\bRCX\\b"), Pattern.compile("\\bRDX\\b"),
+        Pattern.compile("\\bEAX\\b"), Pattern.compile("\\bEBX\\b"),
+        Pattern.compile("\\bECX\\b"), Pattern.compile("\\bEDX\\b")
+    };
+
+    /**
+     * Detects whether assembly code is 6502 or x86/x64 by analyzing content.
+     * Looks for architecture-specific instructions and directives.
+     */
+    private String detectAssemblerType(String sourceCode) {
+        String upperCode = sourceCode.toUpperCase();
+
+        // Count 6502-specific indicators
+        int score6502 = 0;
+        int scoreX86 = 0;
+
+        // Count matches for 6502 instructions
+        for (Pattern pattern : PATTERNS_6502_INSTR) {
+            if (pattern.matcher(upperCode).find()) {
+                score6502++;
+            }
+        }
+
+        // Count matches for 6502 directives (weighted higher)
+        for (Pattern pattern : PATTERNS_6502_DIRECTIVES) {
+            if (pattern.matcher(upperCode).find()) {
+                score6502 += DIRECTIVE_WEIGHT;
+            }
+        }
+
+        // Count matches for x86 instructions
+        for (Pattern pattern : PATTERNS_X86_INSTR) {
+            if (pattern.matcher(upperCode).find()) {
+                scoreX86++;
+            }
+        }
+
+        // Count matches for x86 directives (weighted higher)
+        for (Pattern pattern : PATTERNS_X86_DIRECTIVES) {
+            if (pattern.matcher(upperCode).find()) {
+                scoreX86 += DIRECTIVE_WEIGHT;
+            }
+        }
+
+        logger.info("Assembly detection scores - 6502: {}, x86: {}", score6502, scoreX86);
+
+        // Decide based on scores
+        if (score6502 > scoreX86) {
+            return "6502";
+        } else if (scoreX86 > score6502) {
+            return "asm";
+        } else {
+            // Default to x86 if unclear (more common)
+            logger.warn("Unable to confidently detect assembler type, defaulting to x86");
+            return "asm";
+        }
     }
 
     private JsonObject createErrorResponse(JsonElement id, int code, String message) {
