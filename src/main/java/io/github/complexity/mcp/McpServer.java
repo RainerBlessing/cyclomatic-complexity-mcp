@@ -16,7 +16,7 @@ import java.util.*;
  */
 public class McpServer {
     private static final Logger logger = LoggerFactory.getLogger(McpServer.class);
-    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    private static final Gson gson = new Gson(); // No pretty printing - JSON-RPC requires single-line responses
 
     private final Map<String, ComplexityCalculator> calculators = new HashMap<>();
 
@@ -71,6 +71,10 @@ public class McpServer {
         switch (method) {
             case "initialize":
                 return handleInitialize(idElement);
+            case "notifications/initialized":
+                // This is a notification, no response needed
+                logger.debug("Received initialized notification");
+                return null;
             case "tools/list":
                 return handleToolsList(idElement);
             case "tools/call":
@@ -86,11 +90,17 @@ public class McpServer {
         response.add("id", id);
 
         JsonObject result = new JsonObject();
-        result.addProperty("protocolVersion", "2024-11-05");
-        result.addProperty("serverInfo", "Cyclomatic Complexity MCP Server v1.0.0");
+        result.addProperty("protocolVersion", "2025-06-18"); // Updated to match Claude Code
+
+        JsonObject serverInfo = new JsonObject();
+        serverInfo.addProperty("name", "cyclomatic-complexity-mcp");
+        serverInfo.addProperty("version", "1.0.0");
+        result.add("serverInfo", serverInfo);
 
         JsonObject capabilities = new JsonObject();
-        capabilities.addProperty("tools", true);
+        JsonObject toolsCapability = new JsonObject();
+        // tools capability can be empty object {} or contain listChanged: true
+        capabilities.add("tools", toolsCapability);
 
         result.add("capabilities", capabilities);
         response.add("result", result);

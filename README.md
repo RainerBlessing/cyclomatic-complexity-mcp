@@ -150,6 +150,48 @@ The server uses SLF4J with Simple Logger. Log level can be set via system proper
 java -Dorg.slf4j.simpleLogger.defaultLogLevel=debug -jar build/libs/cyclomatic-complexity-mcp.jar
 ```
 
+## Troubleshooting
+
+### Server not connecting / timeout errors
+
+If Claude Code shows timeout errors when connecting to the MCP server, check the following:
+
+1. **Verify JAR path is absolute**: The path in the configuration must be absolute, not relative
+   ```json
+   "args": ["-jar", "/home/user/path/to/cyclomatic-complexity-mcp.jar"]
+   ```
+
+2. **Check Java version**: Requires Java 17 or higher
+   ```bash
+   java -version
+   ```
+
+3. **Rebuild after updates**: Always rebuild after pulling updates
+   ```bash
+   ./gradlew clean build
+   ```
+
+4. **Check MCP logs**: Claude Code logs MCP server output to:
+   - Linux: `~/.cache/claude-cli-nodejs/<project>/mcp-logs-cyclomatic-complexity/`
+   - macOS: `~/Library/Caches/claude-cli-nodejs/<project>/mcp-logs-cyclomatic-complexity/`
+
+5. **Test server manually**: Verify the server responds to initialize requests
+   ```bash
+   echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' | java -jar build/libs/cyclomatic-complexity-mcp.jar
+   ```
+   Should return a JSON response with `"protocolVersion":"2025-06-18"` on a single line.
+
+### Server starts but tools not available
+
+If the server connects but tools don't appear in Claude Code:
+
+1. Verify the server responds to `tools/list`:
+   ```bash
+   (echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' && echo '{"jsonrpc":"2.0","method":"notifications/initialized"}' && echo '{"jsonrpc":"2.0","id":2,"method":"tools/list"}') | java -jar build/libs/cyclomatic-complexity-mcp.jar
+   ```
+
+2. Check that the response includes `analyze_complexity` and `analyze_complexity_code` tools
+
 ## License
 
 MIT License
